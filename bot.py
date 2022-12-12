@@ -27,7 +27,7 @@ import agparser as parser
 from datetime import datetime
 
 from database import Database
-db = Database("monitoring.db") # Подключение к базе данных
+db = Database("tracking.db") # Подключение к базе данных
 
 bot = telebot.TeleBot("<API-ключ>", "HTML") # Вставляем сюда свой API-ключ
 
@@ -37,18 +37,18 @@ def checker_test():
         time = datetime.now()
         timestamp = f'[{time.day}-{time.month}-{time.year} {time.hour}:{time.minute}:{time.second}]'
 
-        for tuple in db.get_ids(): # Получаем все кортежи из списка в БД
+        for tuple in db.getIds(): # Получаем все кортежи из списка в БД
             for id in tuple: # Из каждого кортежа извлекаем значение и производим операции
                 userId = db.getUserId(id)
-                link = db.get_title(id)
+                link = db.getTracking(id)
 
-                thumbnail = parser.get_thumbnail(link)
-                episodes = parser.get_episodes(link) # Получаем с ресурса количество эпизодов на тайтле пользователя
-                title = parser.get_title(link) 
-                status = parser.get_status(link)
-                studio = parser.get_studio(link)
+                thumbnail = parser.getThumbnail(link)
+                episodes = parser.getEpisodes(link) # Получаем с ресурса количество эпизодов на тайтле пользователя
+                title = parser.getTitle(link) 
+                status = parser.getStatus(link)
+                studio = parser.getStudio(link)
 
-                if (episodes != db.get_episodes(id)): # Сравниваем со значением в базе и если оно изменилось - отправляем сообщение
+                if (episodes != db.getEpisodes(id)): # Сравниваем со значением в базе и если оно изменилось - отправляем сообщение
                     bot.send_photo(userId, requests.get(thumbnail).content, f'<b>{title}</b> \n'
                     '========================\n'
                     f'Эпизодов: {episodes}\n'
@@ -56,9 +56,9 @@ def checker_test():
                     f'Студия: {studio}\n'
                     '========================\n'
                     '<b>✅ Вышел новый эпизод этого аниме!</b>\n'
-                    f'<b>Бегом смотреть: </b><a href="{db.get_title(id)}">*тык*</a>')
+                    f'<b>Бегом смотреть: </b><a href="{db.getTracking(id)}">*тык*</a>')
 
-                    db.set_episodes(id, episodes)
+                    db.setEpisodes(id, episodes)
                     print(f'{timestamp} Произошла проверка, уведомления о новых сериях отправлены')
                 else:
                     print(f'{timestamp} Произошла проверка, новых серий нет')
@@ -75,13 +75,7 @@ t1.start()
 @bot.message_handler(content_types=['text'])
 def start(message):
     if message.text == "/start":
-        lock.acquire(False) # Получаем лок нашего потока, чтобы sqlite3 не ругался на рекурсивное обращение к БД
-        try:
-            if(not db.user_exists(message.from_user.id)): # Создаём запись о пользователе, если его ещё не существует
-                db.add_user(message.from_user.id)
-        finally:
-            lock.release() # Отпускаем лок, чтобы проверка могла работать дальше
-
+        userExists(message.from_user.id)
 
         bot.send_message(message.from_user.id, "👋 Привет, я бот для отслеживания выхода новых эпизодов разных аниме\n"
         "Напишите /help для просмотра списка команд, если вы тут впервые!\n\n"
@@ -93,24 +87,19 @@ def start(message):
         "/tracking - вывести отслеживаемый тайтл\n"
         "/track - добавить тайтл в отслеживаемое")
     if message.text == "/tracking":
-        lock.acquire(False) # Получаем лок нашего потока, чтобы sqlite3 не ругался на рекурсивное обращение к БД
-        try:
-            if(not db.user_exists(message.from_user.id)): # Создаём запись о пользователе, если его ещё не существует
-                db.add_user(message.from_user.id)
-        finally:
-            lock.release() # Отпускаем лок, чтобы проверка могла работать дальше
+        userExists(message.from_user.id)
 
-        if db.get_title(db.getId(message.from_user.id)) == None:
+        if db.getTracking(db.getId(message.from_user.id)) == None:
             bot.send_message(message.from_user.id, "⛔️ Вы ничего не отслеживаете в данный момент!")
         else:
-            link = db.get_title(db.getId(message.from_user.id))
-            episodes = db.get_episodes(db.getId(message.from_user.id))
+            link = db.getTracking(db.getId(message.from_user.id))
+            episodes = db.getEpisodes(db.getId(message.from_user.id))
 
-            title = parser.get_title(link) 
-            status = parser.get_status(link)
-            studio = parser.get_studio(link)
+            title = parser.getTitle(link) 
+            status = parser.getStatus(link)
+            studio = parser.getStudio(link)
 
-            bot.send_photo(message.from_user.id, requests.get(parser.get_thumbnail(db.get_title(db.getId(message.from_user.id)))).content, f'<b>{title}</b> \n'
+            bot.send_photo(message.from_user.id, requests.get(parser.getThumbnail(db.getTracking(db.getId(message.from_user.id)))).content, f'<b>{title}</b> \n'
             '========================\n'
             f'Эпизодов: {episodes}\n'
             f'Статус: {status}\n'
@@ -118,31 +107,19 @@ def start(message):
             '========================\n'
             '<b>🔥 Вы отслеживаете это аниме!</b>') 
     if message.text == "/track":
-        lock.acquire(False) # Получаем лок нашего потока, чтобы sqlite3 не ругался на рекурсивное обращение к БД
-        try:
-            if(not db.user_exists(message.from_user.id)): # Создаём запись о пользователе, если его ещё не существует
-                db.add_user(message.from_user.id)
-        finally:
-            lock.release() # Отпускаем лок, чтобы проверка могла работать дальше
-
+        userExists(message.from_user.id)
 
         bot.send_message(message.from_user.id, "🔍 Какое аниме вы хотите отслеживать?")
         bot.register_next_step_handler(message, monitor) # Передаём задачу по добавлению тайтла другой функции
     if message.text == "/stoptracking":
-        lock.acquire(False) # Получаем лок нашего потока, чтобы sqlite3 не ругался на рекурсивное обращение к БД
-        try:
-            if(not db.user_exists(message.from_user.id)): # Создаём запись о пользователе, если его ещё не существует
-                db.add_user(message.from_user.id)
-        finally:
-            lock.release() # Отпускаем лок, чтобы проверка могла работать дальше
+        userExists(message.from_user.id)
 
-
-        if db.get_title(db.getId(message.from_user.id)) == None:
+        if db.getTracking(db.getId(message.from_user.id)) == None:
             bot.send_message(message.from_user.id, "⛔️ Вы ничего не отслеживаете в данный момент!")
         else:
             # Стираем записи пользователя.
-            db.set_title(db.getId(message.from_user.id), None) 
-            db.set_episodes(db.getId(message.from_user.id), None)
+            db.setTracking(db.getId(message.from_user.id), None) 
+            db.setEpisodes(db.getId(message.from_user.id), None)
             bot.send_message(message.from_user.id, "🚫 Вы больше ничего не отслеживаете!")
 
 # Функция, которая добавляет тайтл в отслеживаемые
@@ -156,14 +133,14 @@ def monitor(message):
         markup.add(go_button)
 
         # Парсим всё! Обложку, название, количество эпизодов, студию, статус, только жанры пока не научился
-        thumbnail = parser.get_thumbnail(link)
-        title = parser.get_title(link) 
-        episodes = parser.get_episodes(link)
-        status = parser.get_status(link)
-        studio = parser.get_studio(link)
+        thumbnail = parser.getThumbnail(link)
+        episodes = parser.getEpisodes(link) # Получаем с ресурса количество эпизодов на тайтле пользователя
+        title = parser.getTitle(link) 
+        status = parser.getStatus(link)
+        studio = parser.getStudio(link)
 
         # Пользователь не сможет добавить уже вышедшее или ещё только анонсированное аниме
-        if parser.get_status(link) == 'Онгоинг' or parser.get_status(link) == 'Анонс':
+        if parser.getStatus(link) == 'Онгоинг' or parser.getStatus(link) == 'Анонс':
             bot.send_photo(message.from_user.id, requests.get(thumbnail).content, f'<b>{title}</b> \n'
             '========================\n'
             f'Эпизодов: {episodes}\n'
@@ -171,8 +148,8 @@ def monitor(message):
             f'Студия: {studio}\n'
             '========================\n'
             '<b>🔔 Теперь вы отслеживаете это аниме!</b>', reply_markup=markup)
-            db.set_title(db.getId(message.from_user.id), link) # Выставляем ссылку в запись пользователя
-            db.set_episodes(db.getId(message.from_user.id), parser.get_episodes(db.get_title(db.getId(message.from_user.id)))) # Туда же количество эпизодов
+            db.setTracking(db.getId(message.from_user.id), link) # Выставляем ссылку в запись пользователя
+            db.setEpisodes(db.getId(message.from_user.id), parser.getEpisodes(db.getTracking(db.getId(message.from_user.id)))) # Туда же количество эпизодов
         else:
             bot.send_photo(message.from_user.id, requests.get(thumbnail).content, f'<b>{title}</b> \n'
             '========================\n'
@@ -181,6 +158,14 @@ def monitor(message):
             f'Студия: {studio}\n'
             '========================\n'
             '<b>⚠️ Вы не можете отслеживать это аниме!</b>', reply_markup=markup)
+
+def userExists(userId):
+    lock.acquire(False) # Получаем лок нашего потока, чтобы sqlite3 не ругался на рекурсивное обращение к БД
+    try:
+        if(not db.userExists(userId)): # Создаём запись о пользователе, если его ещё не существует
+            db.addUser(userId)
+    finally:
+        lock.release() # Отпускаем лок, чтобы проверка могла работать дальше
 
 
 bot.polling(none_stop=True, interval=0)

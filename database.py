@@ -26,40 +26,40 @@ class Database:
         self.conn = sqlite3.connect(db_file, check_same_thread=False)
         self.cursor = self.conn.cursor()
 
-    def user_exists(self, user_id):
-        result = self.cursor.execute("SELECT `id` FROM `users` WHERE `user_id` = ?", (user_id,))
+    def userExists(self, user_id):
+        result = self.cursor.execute("SELECT `id` FROM `users` WHERE `userId` = ?", (user_id,))
         return bool(len(result.fetchall()))
 
     def getId(self, user_id):
-        result = self.cursor.execute("SELECT `id` FROM `users` WHERE `user_id` = ?", (user_id,))
+        result = self.cursor.execute("SELECT `id` FROM `users` WHERE `userId` = ?", (user_id,))
         return result.fetchone()[0]
 
-    def add_user(self, user_id):
-        self.cursor.execute("INSERT INTO `users` (`user_id`) VALUES (?)", (user_id,))
+    def addUser(self, user_id):
+        self.cursor.execute("INSERT INTO `users` (`userId`) VALUES (?)", (user_id,))
         return self.conn.commit()
 
-    def set_title(self, user_id, title_link):
-        self.cursor.execute("UPDATE `users` SET `monitors` = ? WHERE `id` = ?", (title_link, user_id))
+    def setTracking(self, id, title_link):
+        self.cursor.execute("UPDATE `users` SET `tracking` = ? WHERE `id` = ?", (title_link, id))
         return self.conn.commit()
 
-    def get_title(self, user_id):
-        result = self.cursor.execute("SELECT `monitors` FROM `users` WHERE `id` = ?", (user_id,))
+    def getTracking(self, id):
+        result = self.cursor.execute("SELECT `tracking` FROM `users` WHERE `id` = ?", (id,))
         return result.fetchone()[0]
 
-    def get_ids(self):
+    def getIds(self):
         result = self.cursor.execute("SELECT `id` FROM `users`")
         return result.fetchall()
 
     def getUserId(self, id):
-        result = self.cursor.execute("SELECT `user_id` FROM `users` WHERE `id` = ?", (id,))
+        result = self.cursor.execute("SELECT `userId` FROM `users` WHERE `id` = ?", (id,))
         return result.fetchone()
 
-    def set_episodes(self, user_id, episodes):
-        self.cursor.execute("UPDATE `users` SET `episodes` = ? WHERE `id` = ?", (episodes, user_id))
+    def setEpisodes(self, id, episodes):
+        self.cursor.execute("UPDATE `users` SET `episodes` = ? WHERE `id` = ?", (episodes, id))
         return self.conn.commit()
 
-    def get_episodes(self, user_id):
-        result = self.cursor.execute("SELECT `episodes` FROM `users` WHERE `id` = ?", (user_id,))
+    def getEpisodes(self, id):
+        result = self.cursor.execute("SELECT `episodes` FROM `users` WHERE `id` = ?", (id,))
         return result.fetchone()[0]
 
     def close(self):

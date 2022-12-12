@@ -33,7 +33,7 @@ def search(title):
     except IndexError:
         return "-"
         
-def get_status(link):
+def getStatus(link):
     request = requests.get(link)
     soup = bs4.BeautifulSoup(request.text, "html.parser")
     try:
@@ -44,7 +44,7 @@ def get_status(link):
     except IndexError:
         return "-"
 
-def get_episodes(link):
+def getEpisodes(link):
     request = requests.get(link)
     soup = bs4.BeautifulSoup(request.text, "html.parser")
     try:
@@ -55,7 +55,7 @@ def get_episodes(link):
     except IndexError:
         return "-"
 
-def get_title(link):
+def getTitle(link):
     request = requests.get(link)
     soup = bs4.BeautifulSoup(request.text, "html.parser")
     try:
@@ -66,7 +66,7 @@ def get_title(link):
     except IndexError:
         return "-"
 
-def get_thumbnail(link):
+def getThumbnail(link):
     request = requests.get(link)
     soup = bs4.BeautifulSoup(request.text, "html.parser")
     try:
@@ -77,7 +77,7 @@ def get_thumbnail(link):
     except IndexError:
         return "-"
 
-def get_studio(link):
+def getStudio(link):
     request = requests.get(link)
     soup = bs4.BeautifulSoup(request.text, "html.parser")
     try:
